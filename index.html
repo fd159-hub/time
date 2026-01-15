@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>定期考查計時器 v5.7｜極簡專注版</title>
+  <title>定期考查計時器 v5.8｜校徽檔案版</title>
   <style>
     :root{
       --bg:#f8fafc;
@@ -49,7 +49,7 @@
       transition: all 0.3s ease; /* 加入過渡效果 */
     }
 
-    /* --- 專注模式：右上按鈕收折邏輯 (New) --- */
+    /* --- 專注模式：右上按鈕收折邏輯 --- */
     /* 當專注模式啟動時，隱藏 .actions 內除了 toggle 以外的所有元素 */
     #topSection.focus-active .actions > *:not(.focus-toggle) {
       display: none;
@@ -99,23 +99,14 @@
       max-width: 200px;
       object-fit: contain; 
       filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
-      cursor: pointer;
-      transition: opacity 0.2s;
     }
-    .school-badge:hover { opacity: 0.8; }
-    .logo-hint {
-        position: absolute; bottom: -20px; left: 0; width: 100%; text-align: center;
-        font-size: 10px; color: var(--muted); opacity: 0; transition: opacity 0.2s;
-        pointer-events: none;
-    }
-    .logo-area:hover .logo-hint { opacity: 1; }
 
     .title-group h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
     
-    /* 核心狀態看板 */
+    /* 核心狀態看板 - 調整順序 */
     .dashboard {
       display: grid;
-      grid-template-columns: 1.5fr 1fr 1.5fr;
+      grid-template-columns: 1.5fr 1fr 1.5fr; /* 時間 | 科目 | 人數 */
       gap: 15px;
       margin-bottom: 20px;
     }
@@ -294,8 +285,6 @@
         color: var(--blue);
         transition: all 0.3s;
     }
-
-    #logoInput { display: none; }
     
     .divider { width: 1px; height: 24px; background: var(--line); margin: 0 4px; }
 
@@ -318,11 +307,10 @@
     <!-- Header -->
     <div class="header">
         <div class="brand">
-        <div class="logo-area" onclick="$('logoInput').click()" title="點擊更換校徽">
-            <img id="schoolLogo" src="" alt="校徽" class="school-badge">
-            <div class="logo-hint">點擊更換</div>
+        <div class="logo-area">
+            <!-- 直接使用 logo.png，並加入錯誤處理以防檔案不存在 -->
+            <img id="schoolLogo" src="logo.png" alt="校徽" class="school-badge" onerror="this.src=DEFAULT_LOGO">
         </div>
-        <input type="file" id="logoInput" accept="image/*">
         <div class="title-group">
             <h1 id="displayDate">2024 / 01 / 01 (一)</h1>
         </div>
@@ -338,12 +326,7 @@
 
         <button class="btn btn-ghost" id="btnFullscreen">⛶ 全螢幕</button>
         <div class="divider"></div>
-        <label class="checkbox-btn" title="上傳時將圖片白色背景轉為透明">
-            <input type="checkbox" id="autoRemoveWhite" checked> 
-            去白底
-        </label>
-        <button class="btn btn-ghost" onclick="$('logoInput').click()">🖼️ 更換校徽</button>
-        <div class="divider"></div>
+        <!-- 移除更換校徽與去白底按鈕 -->
         <button class="btn btn-ghost" onclick="resetAttendance()">↺ 重置出席</button>
         <button class="btn btn-ghost" style="color:var(--red); border-color: #fecaca;" onclick="clearMemory()">🧪 清除設定</button>
         </div>
@@ -375,13 +358,26 @@
     </div>
   </div>
 
-  <!-- Dashboard Stats -->
+  <!-- Dashboard Stats (重新排序：時間 -> 科目 -> 人數) -->
   <div class="dashboard">
+    <!-- 1. Analog Clock & Time -->
+    <div class="stat-card" style="display:flex; align-items:center; justify-content:center; gap:20px;">
+      <div>
+        <span class="stat-label">現在時間</span>
+        <div class="stat-value" id="digitalClock" style="font-family: monospace;">00:00:00</div>
+        <div class="stat-sub">距離收卷/開考還有 <strong id="quickCountdown">--</strong></div>
+      </div>
+      <canvas id="analogClock" width="80" height="80"></canvas>
+    </div>
+
+    <!-- 2. Current Subject -->
     <div class="stat-card">
       <span class="stat-label">當前考試科目</span>
       <div class="stat-value" id="currentSubDisplay" style="color:var(--blue)">準備中</div>
       <div class="stat-sub" id="currentTimeRange">-- : -- ~ -- : --</div>
     </div>
+
+    <!-- 3. Attendance -->
     <div class="stat-card" style="display: flex; flex-direction: row; justify-content: space-around; align-items: center;">
        <div>
          <span class="stat-label">應到</span>
@@ -397,15 +393,6 @@
          <span class="stat-label">缺考</span>
          <div class="stat-value val-absent" id="countAbsent">0</div>
        </div>
-    </div>
-    <!-- Analog Clock Card -->
-    <div class="stat-card" style="display:flex; align-items:center; justify-content:center; gap:20px;">
-      <div>
-        <span class="stat-label">現在時間</span>
-        <div class="stat-value" id="digitalClock" style="font-family: monospace;">00:00:00</div>
-        <div class="stat-sub">距離收卷/開考還有 <strong id="quickCountdown">--</strong></div>
-      </div>
-      <canvas id="analogClock" width="80" height="80"></canvas>
     </div>
   </div>
 
@@ -446,6 +433,7 @@
 
 <script>
   const KEY = "exam_timer_v5_data_focus"; 
+  // 後備校徽 (SVG)
   const DEFAULT_LOGO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjU2M2ViIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDJNOSA0LjlWMTdMMTIgMjJsLTktNC45Vjd6Ii8+PHBhdGggZD0iTTIyIDdMMTIgMjJsLTUtMi41Ii8+PHBhdGggZD0iTTEyIDEydjEwIi8+PC9zdmc+";
 
   const state = {
@@ -453,7 +441,7 @@
     total: 25, 
     mathExt: 0,
     present: [],
-    logo: null,
+    // logo 已移除，改用靜態檔案
     selectionIndex: null,
     focusMode: false
   };
@@ -468,7 +456,6 @@
         state.mode = data.mode || 'mid_day2';
         state.total = parseInt(data.total) || 25;
         state.mathExt = parseInt(data.mathExt) || 0;
-        state.logo = data.logo || null; 
         state.focusMode = data.focusMode || false; 
         
         if (data.present && Array.isArray(data.present)) {
@@ -485,8 +472,7 @@
     try {
         localStorage.setItem(KEY, JSON.stringify(state));
     } catch (e) {
-        alert("儲存失敗！圖片可能過大。");
-        state.logo = null; 
+        alert("儲存失敗！");
         saveData();
         syncUI();
     }
@@ -499,12 +485,6 @@
     $('mathExtField').style.display = (state.mode === 'mid_day2') ? 'flex' : 'none';
     $('focusModeToggle').checked = state.focusMode; 
     
-    if (state.logo) {
-        $('schoolLogo').src = state.logo;
-    } else {
-        $('schoolLogo').src = DEFAULT_LOGO;
-    }
-
     renderAttendance();
   }
 
@@ -515,51 +495,6 @@
       // 立即觸發檢查
       tick();
   };
-
-  $('logoInput').onchange = function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      if (file.size > 500000) { 
-          alert("圖片過大 (需 < 500KB)");
-          return;
-      }
-      const reader = new FileReader();
-      reader.onload = function(event) {
-          const rawBase64 = event.target.result;
-          if ($('autoRemoveWhite').checked) {
-              removeWhiteBg(rawBase64, (processed) => {
-                  state.logo = processed;
-                  saveData();
-                  syncUI();
-              });
-          } else {
-              state.logo = rawBase64;
-              saveData();
-              syncUI();
-          }
-      };
-      reader.readAsDataURL(file);
-  };
-
-  function removeWhiteBg(base64Image, callback) {
-      const img = new Image();
-      img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const data = imgData.data;
-          for (let i = 0; i < data.length; i += 4) {
-              const r = data[i], g = data[i+1], b = data[i+2];
-              if (r > 230 && g > 230 && b > 230) data[i+3] = 0; 
-          }
-          ctx.putImageData(imgData, 0, 0);
-          callback(canvas.toDataURL());
-      };
-      img.src = base64Image;
-  }
 
   function renderAttendance() {
     if (state.present.length !== parseInt(state.total)) {
