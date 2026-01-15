@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>定期考查計時器 v6.1｜自動去背版</title>
+  <title>定期考查計時器 v7.0｜專業排版增強版</title>
   <style>
     :root{
       /* Light Mode Variables */
@@ -51,13 +51,28 @@
       background: var(--bg); 
       min-height: 100vh;
       overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
       transition: background 0.3s, color 0.3s;
     }
     body:not(.dark-mode) {
         background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
     }
     
-    .container{ max-width: 1400px; margin: 0 auto; padding: 20px; }
+    .container{ 
+      max-width: 1400px; 
+      margin: 0 auto; 
+      padding: 20px; 
+      flex: 1; /* 讓 container 佔滿高度 */
+      display: flex;
+      flex-direction: column;
+      height: 100vh; /* 使用 viewport height */
+    }
+
+    /* Top Section Wrapper */
+    #topSection {
+       flex-shrink: 0; /* 防止頭部被壓縮 */
+    }
 
     /* Header & Top Bar */
     .header{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 20px; flex-wrap: wrap; }
@@ -112,30 +127,27 @@
       border: none;
     }
     
-    /* Logo 樣式調整 (自動去背關鍵) */
+    /* Logo */
     .logo-area { display: flex; align-items: center; justify-content: center; position: relative; }
     .school-badge { 
       height: 60px; 
       width: auto; 
       max-width: 200px;
       object-fit: contain; 
-      /* 關鍵 CSS：將圖片圖層混合模式設為 multiply，可直接讓白底在淺色背景上「消失」 */
       mix-blend-mode: multiply; 
       filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
     }
-    /* 在深色模式下，multiply 會讓圖片變太暗，如果 JS 去背失敗，這裡加一點亮度補償 */
-    body.dark-mode .school-badge {
-        mix-blend-mode: normal; /* 深色模式下取消混合，依靠 JS 去背或原圖 */
-    }
+    body.dark-mode .school-badge { mix-blend-mode: normal; }
 
     .title-group h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
     
     /* 核心狀態看板 */
     .dashboard {
       display: grid;
-      grid-template-columns: 350px 1fr 1.5fr; /* 時間 | 科目 | 人數 */
+      grid-template-columns: 350px 1fr 1.5fr; 
       gap: 20px; 
       margin-bottom: 20px;
+      flex-shrink: 0; /* 防止看板被壓縮 */
     }
     .stat-card {
       background: var(--card-bg);
@@ -151,13 +163,19 @@
     .stat-value { font-size: 38px; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; color: var(--ink); }
     .stat-sub { font-size: 14px; color: var(--muted); margin-top: 5px; font-weight: 600; }
 
-    /* 出缺席專用顏色 */
     .val-should { color: var(--ink); }
     .val-present { color: var(--green); }
     .val-absent { color: var(--red); }
 
-    /* Main Content Layout */
-    .main-grid { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
+    /* Main Content Layout - 重點修改處 */
+    .main-grid { 
+      display: grid; 
+      grid-template-columns: 350px 1fr; 
+      gap: 20px; 
+      flex: 1; /* 佔滿剩餘高度 */
+      min-height: 0; /* 讓內容可捲動或壓縮 */
+      align-items: stretch; /* 左右等高 */
+    }
     
     .card {
       background: var(--card-bg);
@@ -165,10 +183,46 @@
       box-shadow: var(--shadow);
       overflow: hidden;
       border: 1px solid var(--line);
-      margin-bottom: 20px; 
-      height: 100%; 
       transition: background 0.3s, border-color 0.3s;
     }
+
+    /* Left Sidebar: Schedule */
+    .sidebar-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    #schedList {
+        flex: 1; /* 讓列表填滿卡片 */
+        overflow-y: auto; /* 若內容過多可捲動 */
+        padding-bottom: 20px;
+    }
+
+    /* Right Column: Timer + Attendance */
+    .right-column {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100%;
+    }
+
+    .timer-card-wrapper {
+      flex: 1; /* 這是關鍵：讓計時器卡片吃掉所有剩餘空間 */
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .timer-card-wrapper .card {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center; /* 內容垂直置中 */
+    }
+
+    .attendance-card-wrapper {
+      flex-shrink: 0; /* 不壓縮，保持內容高度 */
+    }
+
     .card-hd { 
         padding: 15px 20px; 
         border-bottom: 1px solid var(--line); 
@@ -180,38 +234,42 @@
 
     .card-hd h2 { font-size: 18px; margin: 0; font-weight: 800; }
 
-    /* Timer Display */
+    /* Timer Display - 加大尺寸 */
     .timer-box {
-      padding: 40px 20px;
+      padding: 20px;
       text-align: center;
       position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
     }
     .timer-big {
-      font-size: 140px; 
+      font-size: 220px; /* 大幅增加字體 */
       font-weight: 900;
       line-height: 1;
-      margin: 10px 0;
+      margin: 20px 0;
       font-variant-numeric: tabular-nums;
       transition: color 0.3s;
-      letter-spacing: -4px;
+      letter-spacing: -8px;
       color: var(--ink);
     }
     .timer-status {
       display: inline-block;
-      padding: 6px 16px;
+      padding: 8px 24px;
       border-radius: 99px;
       font-weight: 800;
-      font-size: 18px;
-      margin-bottom: 15px;
+      font-size: 24px; /* 狀態標籤也加大 */
+      margin-bottom: 10px;
     }
     .status-exam { background: #dcfce7; color: #166534; }
     .status-break { background: #fef3c7; color: #92400e; }
     .status-finish { background: #f1f5f9; color: #475569; }
-    
     body.dark-mode .status-finish { background: #334155; color: #cbd5e1; }
 
     /* Progress Bar */
-    .progress-container { height: 14px; background: var(--line); border-radius: 7px; overflow: hidden; margin: 20px auto; width: 85%; }
+    .progress-container { height: 18px; background: var(--line); border-radius: 9px; overflow: hidden; margin: 30px auto; width: 90%; }
     .progress-bar { height: 100%; width: 100%; background: var(--blue); transition: width 1s linear, background 0.3s; }
 
     /* Attendance Grid */
@@ -257,18 +315,18 @@
       100% { transform: scale(1); }
     }
 
-    /* Schedule List */
+    /* Schedule List - 字體再加大 */
     .sched-item {
-      padding: 20px 25px; 
+      padding: 25px 30px; /* 增加間距 */
       border-bottom: 1px solid var(--line);
       display: flex; justify-content: space-between; align-items: center;
     }
     .sched-item:last-child { border-bottom: none; }
-    .sched-item.active { background: rgba(37, 99, 235, 0.1); border-left: 6px solid var(--blue); }
+    .sched-item.active { background: rgba(37, 99, 235, 0.1); border-left: 8px solid var(--blue); }
     .sched-item.past { opacity: 0.5; background: rgba(0,0,0,0.02); }
     
-    .sched-name { font-weight: 800; font-size: 24px; color: var(--ink); } 
-    .sched-time { color: var(--muted); font-weight: 700; font-family: monospace; font-size: 20px; }
+    .sched-name { font-weight: 800; font-size: 32px; color: var(--ink); } /* 加大 */
+    .sched-time { color: var(--muted); font-weight: 700; font-family: monospace; font-size: 24px; } /* 加大 */
 
     /* Field Styles */
     .field { display: flex; flex-direction: column; gap: 5px; }
@@ -328,12 +386,13 @@
     .divider { width: 1px; height: 24px; background: var(--line); margin: 0 4px; }
 
     @media (max-width: 1200px) {
-        .timer-big { font-size: 100px; }
+        .timer-big { font-size: 150px; }
         .actions { flex-wrap: wrap; justify-content: flex-end; }
     }
     @media (max-width: 1024px) {
       .dashboard { grid-template-columns: 1fr; }
       .main-grid { grid-template-columns: 1fr; }
+      .container { height: auto; display: block; }
     }
   </style>
 </head>
@@ -347,7 +406,6 @@
     <div class="header">
         <div class="brand">
         <div class="logo-area">
-            <!-- 增加 id 以便 JS 抓取處理 -->
             <img id="schoolLogo" src="logo.png" alt="校徽" class="school-badge" onerror="this.src=DEFAULT_LOGO">
         </div>
         <div class="title-group">
@@ -355,7 +413,6 @@
         </div>
         </div>
         <div class="actions">
-        <!-- 專注模式開關 -->
         <label class="checkbox-btn focus-toggle" title="考試時自動隱藏上方設定區">
             <input type="checkbox" id="focusModeToggle"> 
             專注模式
@@ -363,14 +420,12 @@
         
         <div class="divider"></div>
 
-        <!-- 深色模式切換按鈕 -->
         <button class="btn btn-ghost" id="btnDarkMode" onclick="toggleDarkMode()" title="切換深色模式">
             🌙
         </button>
 
         <button class="btn btn-ghost" id="btnFullscreen">⛶ 全螢幕</button>
         <div class="divider"></div>
-        <!-- 移除不必要按鈕 -->
         <button class="btn btn-ghost" onclick="resetAttendance()">↺ 重置出席</button>
         <button class="btn btn-ghost" style="color:var(--red); border-color: #fecaca;" onclick="clearMemory()">🧪 清除設定</button>
         </div>
@@ -404,7 +459,7 @@
 
   <!-- Dashboard Stats -->
   <div class="dashboard">
-    <!-- 1. Analog Clock & Time (最前面) -->
+    <!-- 1. Analog Clock & Time -->
     <div class="stat-card" style="display:flex; align-items:center; justify-content:center; gap:20px;">
       <div>
         <span class="stat-label">現在時間</span>
@@ -414,14 +469,14 @@
       <canvas id="analogClock" width="80" height="80"></canvas>
     </div>
 
-    <!-- 2. Current Subject (中間) -->
+    <!-- 2. Current Subject -->
     <div class="stat-card">
       <span class="stat-label">當前考試科目</span>
       <div class="stat-value" id="currentSubDisplay" style="color:var(--blue)">準備中</div>
       <div class="stat-sub" id="currentTimeRange">-- : -- ~ -- : --</div>
     </div>
 
-    <!-- 3. Attendance (後面) -->
+    <!-- 3. Attendance -->
     <div class="stat-card" style="display: flex; flex-direction: row; justify-content: space-around; align-items: center;">
        <div>
          <span class="stat-label">應到</span>
@@ -442,8 +497,8 @@
 
   <!-- Main Content -->
   <div class="main-grid">
-    <!-- Sidebar: Schedule -->
-    <div class="card">
+    <!-- Left Sidebar: Schedule -->
+    <div class="card sidebar-card">
       <div class="card-hd">
         <h2>考試日程</h2>
       </div>
@@ -452,31 +507,38 @@
       </div>
     </div>
 
-    <!-- Main: Timer & Attendance -->
-    <div style="display:flex; flex-direction:column; gap:20px;">
-      <div class="card">
-        <div class="timer-box">
-          <div id="timerLabel" style="font-weight:800; color:var(--muted); font-size: 20px; letter-spacing: 1px;">剩餘時間</div>
-          <div class="timer-big" id="timerBig">00:00</div>
-          <div class="progress-container">
-            <div class="progress-bar" id="progressBar"></div>
-          </div>
+    <!-- Right Column: Timer & Attendance -->
+    <div class="right-column">
+      <!-- 上方：計時器 (自動延展填滿空間) -->
+      <div class="timer-card-wrapper">
+        <div class="card">
+            <div class="timer-box">
+            <div id="timerLabel" style="font-weight:800; color:var(--muted); font-size: 24px; letter-spacing: 2px;">剩餘時間</div>
+            <div class="timer-big" id="timerBig">00:00</div>
+            <span id="statusBadge2" class="timer-status" style="display:none"></span> <!-- Hidden backup -->
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            </div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-hd">
-          <h2>學生座號方塊 (雙擊變更狀態)</h2>
-          <span style="font-size:13px; color:var(--muted)">※ 預設全出席</span>
+      <!-- 下方：學生座號 (固定在底部，與左側對齊) -->
+      <div class="attendance-card-wrapper">
+        <div class="card">
+            <div class="card-hd">
+            <h2>學生座號方塊 (雙擊變更狀態)</h2>
+            <span style="font-size:13px; color:var(--muted)">※ 預設全出席</span>
+            </div>
+            <div class="stu-grid" id="stuGrid"></div>
         </div>
-        <div class="stu-grid" id="stuGrid"></div>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-  const KEY = "exam_timer_v6_data";
+  const KEY = "exam_timer_v7_data";
   const DEFAULT_LOGO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjU2M2ViIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDJNOSA0LjlWMTdMMTIgMjJsLTktNC45Vjd6Ii8+PHBhdGggZD0iTTIyIDdMMTIgMjJsLTUtMi41Ii8+PHBhdGggZD0iTTEyIDEydjEwIi8+PC9zdmc+";
 
   const state = {
@@ -555,9 +617,7 @@
 
   // --- 自動去白底邏輯 (嘗試 JS 處理) ---
   window.onload = function() {
-      // 嘗試處理 logo.png
       tryProcessLocalLogo();
-      // 開始計時
       loadData();
       setInterval(tick, 1000);
       tick();
@@ -565,11 +625,10 @@
 
   function tryProcessLocalLogo() {
       const img = $('schoolLogo');
-      // 如果是用預設圖，不處理
       if (img.src.startsWith('data:')) return;
 
       const tempImg = new Image();
-      tempImg.crossOrigin = "Anonymous"; // 嘗試跨域（對 file:// 無效但對 server 有效）
+      tempImg.crossOrigin = "Anonymous";
       tempImg.onload = function() {
           try {
               const canvas = document.createElement('canvas');
@@ -583,19 +642,17 @@
               for (let i = 0; i < data.length; i += 4) {
                   const r = data[i], g = data[i+1], b = data[i+2];
                   if (r > 230 && g > 230 && b > 230) {
-                      data[i+3] = 0; // Set Alpha to 0
+                      data[i+3] = 0; 
                       hasWhite = true;
                   }
               }
               if (hasWhite) {
                   ctx.putImageData(imgData, 0, 0);
-                  img.src = canvas.toDataURL(); // 替換為去背後的 Base64
-                  // 去背成功後，移除 CSS multiply 效果，以免影響圖片內部顏色
+                  img.src = canvas.toDataURL();
                   img.style.mixBlendMode = 'normal';
               }
           } catch (e) {
               console.warn("無法自動去背 (可能是本地檔案安全性限制)，已啟用 CSS 混合模式作為後備方案。", e);
-              // 失敗時，CSS 的 mix-blend-mode: multiply 會自動發揮作用
           }
       };
       tempImg.src = "logo.png";
@@ -823,8 +880,12 @@
   function updateUI(phase, current, next, nowMin) {
     const timerBig = $('timerBig');
     const badge = $('statusBadge');
+    // const badge2 = $('statusBadge2'); // Hidden element
     const progress = $('progressBar');
     
+    // Update badge2 if needed for focus mode logic, though currently unused in CSS
+    // ...
+
     if (phase === 'exam') {
       const endSec = parseHM(current.end) * 60;
       const nowSec = nowMin * 60;
@@ -917,6 +978,32 @@
       list.appendChild(div);
     });
   }
+  
+  // Fullscreen Fix
+  $('btnFullscreen').onclick = () => {
+    if (!document.fullscreenElement) {
+        const docEl = document.documentElement;
+        if (docEl.requestFullscreen) {
+            docEl.requestFullscreen();
+        } else if (docEl.mozRequestFullScreen) { /* Firefox */
+            docEl.mozRequestFullScreen();
+        } else if (docEl.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+            docEl.webkitRequestFullscreen();
+        } else if (docEl.msRequestFullscreen) { /* IE/Edge */
+            docEl.msRequestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+    }
+  };
 </script>
 
 </body>
