@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>定期考查計時器 v7.1｜寬度還原版</title>
+  <title>定期考查計時器 v8.5｜純粹計時版</title>
   <style>
     :root{
       /* Light Mode Variables */
@@ -16,6 +16,7 @@
       --green: #10b981;
       --red: #ef4444;
       --amber: #f59e0b;
+      --purple: #8b5cf6; 
       --shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
       --radius: 20px;
       --font: system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans TC",sans-serif;
@@ -55,7 +56,6 @@
       background: var(--bg); 
       min-height: 100vh;
       overflow-x: hidden;
-      /* 還原為預設區塊顯示，不強制 flex column 滿版，解決變窄問題 */
       display: block; 
       transition: background 0.3s, color 0.3s;
     }
@@ -68,12 +68,6 @@
       max-width: 1400px; 
       margin: 0 auto; 
       padding: 20px; 
-      /* 移除 height: 100vh，讓內容自然撐開 */
-    }
-
-    /* Top Section Wrapper */
-    #topSection {
-       /* 保持原樣 */
     }
 
     /* Header & Top Bar */
@@ -173,7 +167,6 @@
       display: grid; 
       grid-template-columns: 350px 1fr; 
       gap: 20px; 
-      /* 設定最小高度，確保計時器夠大，且左右欄會自動等高 (stretch) */
       min-height: 600px; 
       align-items: stretch;
     }
@@ -191,12 +184,13 @@
     .sidebar-card {
       display: flex;
       flex-direction: column;
-      height: 100%; /* 填滿左欄高度 */
+      height: 100%;
     }
     #schedList {
-        flex: 1; /* 讓列表區塊佔據剩餘空間 */
+        flex: 1; 
         overflow-y: auto;
         padding-bottom: 20px;
+        min-height: 150px;
     }
 
     /* Right Column: Timer + Attendance */
@@ -204,24 +198,24 @@
       display: flex;
       flex-direction: column;
       gap: 20px;
-      height: 100%; /* 填滿右欄高度 */
+      height: 100%;
     }
 
     .timer-card-wrapper {
-      flex: 1; /* 讓計時器卡片吃掉右欄所有剩餘空間 -> 變大 */
+      flex: 1; 
       display: flex;
       flex-direction: column;
     }
     
     .timer-card-wrapper .card {
-      height: 100%; /* 卡片本體填滿 wrapper */
+      height: 100%;
       display: flex;
       flex-direction: column;
-      justify-content: center; /* 內容垂直置中 */
+      justify-content: center;
     }
 
     .attendance-card-wrapper {
-      flex-shrink: 0; /* 座號卡片不壓縮，保持內容高度，並固定在底部 */
+      flex-shrink: 0; 
     }
 
     .card-hd { 
@@ -235,7 +229,7 @@
 
     .card-hd h2 { font-size: 18px; margin: 0; font-weight: 800; }
 
-    /* Timer Display - 加大尺寸 */
+    /* Timer Display */
     .timer-box {
       padding: 20px;
       text-align: center;
@@ -244,10 +238,10 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100%; /* 確保內容在卡片中置中 */
+      height: 100%;
     }
     .timer-big {
-      font-size: 220px; /* 大字體 */
+      font-size: 220px; 
       font-weight: 900;
       line-height: 1;
       margin: 10px 0;
@@ -316,7 +310,7 @@
       100% { transform: scale(1); }
     }
 
-    /* Schedule List - 字體加大 */
+    /* Schedule List */
     .sched-item {
       padding: 25px 30px; 
       border-bottom: 1px solid var(--line);
@@ -351,6 +345,7 @@
     }
     .btn:active { transform: scale(0.95); }
     .btn-blue { background: var(--blue); color: white; }
+    .btn-green { background: var(--green); color: white; }
     .btn-ghost { background: transparent; border: 1px solid var(--muted); color: var(--muted); }
     .btn-ghost:hover { background: rgba(100, 116, 139, 0.1); }
     
@@ -393,6 +388,7 @@
     @media (max-width: 1024px) {
       .dashboard { grid-template-columns: 1fr; }
       .main-grid { grid-template-columns: 1fr; }
+      .container { height: auto; display: block; }
     }
   </style>
 </head>
@@ -400,7 +396,7 @@
 
 <div class="container">
   
-  <!-- Top Section: Header & Control Panel -->
+  <!-- Top Section -->
   <div id="topSection">
     <!-- Header -->
     <div class="header">
@@ -417,13 +413,8 @@
             <input type="checkbox" id="focusModeToggle"> 
             專注模式
         </label>
-        
         <div class="divider"></div>
-
-        <button class="btn btn-ghost" id="btnDarkMode" onclick="toggleDarkMode()" title="切換深色模式">
-            🌙
-        </button>
-
+        <button class="btn btn-ghost" id="btnDarkMode" onclick="toggleDarkMode()" title="切換深色模式">🌙</button>
         <button class="btn btn-ghost" id="btnFullscreen">⛶ 全螢幕</button>
         <div class="divider"></div>
         <button class="btn btn-ghost" onclick="resetAttendance()">↺ 重置出席</button>
@@ -439,6 +430,7 @@
             <option value="low">低年級</option>
             <option value="mid_day1">中高年級 Day 1</option>
             <option value="mid_day2">中高年級 Day 2</option>
+            <option value="custom">📝 自訂 / 平常考</option>
         </select>
         </div>
         <div class="field">
@@ -449,6 +441,20 @@
         <label>數學延長 (分鐘)</label>
         <input type="number" id="mathExtInput" value="0" min="0" step="1" style="width: 100px;" placeholder="輸入分鐘">
         </div>
+
+        <!-- 自訂平常考欄位 -->
+        <div class="field custom-field" style="display:none">
+            <label>科目名稱</label>
+            <input type="text" id="customSubj" value="小考" style="width: 120px;" placeholder="例如: 國語聽寫">
+        </div>
+        <div class="field custom-field" style="display:none">
+            <label>測驗時間 (分鐘)</label>
+            <input type="number" id="customMins" value="15" min="1" style="width: 100px;">
+        </div>
+        <div class="field custom-field" style="display:none; justify-content: flex-end;">
+            <button class="btn btn-green" onclick="startCustomQuiz()" style="padding: 10px 16px;">▶ 立即開始計時</button>
+        </div>
+
         <div style="flex-grow:1"></div>
         <div class="field" style="align-items: flex-end;">
             <label>目前狀態</label>
@@ -459,7 +465,7 @@
 
   <!-- Dashboard Stats -->
   <div class="dashboard">
-    <!-- 1. Analog Clock & Time -->
+    <!-- 1. Analog Clock -->
     <div class="stat-card" style="display:flex; align-items:center; justify-content:center; gap:20px;">
       <div>
         <span class="stat-label">現在時間</span>
@@ -503,13 +509,12 @@
         <h2>考試日程</h2>
       </div>
       <div id="schedList">
-        <!-- JS 會產生列表 -->
+        <!-- JS generates list -->
       </div>
     </div>
 
     <!-- Right Column: Timer & Attendance -->
     <div class="right-column">
-      <!-- 上方：計時器 (自動延展填滿空間) -->
       <div class="timer-card-wrapper">
         <div class="card">
             <div class="timer-box">
@@ -523,7 +528,6 @@
         </div>
       </div>
 
-      <!-- 下方：學生座號 (固定在底部) -->
       <div class="attendance-card-wrapper">
         <div class="card">
             <div class="card-hd">
@@ -538,7 +542,7 @@
 </div>
 
 <script>
-  const KEY = "exam_timer_v7_data";
+  const KEY = "exam_timer_v8_data";
   const DEFAULT_LOGO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjU2M2ViIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDJNOSA0LjlWMTdMMTIgMjJsLTktNC45Vjd6Ii8+PHBhdGggZD0iTTIyIDdMMTIgMjJsLTUtMi41Ii8+PHBhdGggZD0iTTEyIDEydjEwIi8+PC9zdmc+";
 
   const state = {
@@ -548,11 +552,13 @@
     present: [],
     selectionIndex: null,
     focusMode: false,
-    darkMode: false
+    darkMode: false,
+    customSchedule: [] 
   };
 
   function $(id) { return document.getElementById(id); }
 
+  // --- Core App Logic ---
   function loadData() {
     const saved = localStorage.getItem(KEY);
     if (saved) {
@@ -563,6 +569,7 @@
         state.mathExt = parseInt(data.mathExt) || 0;
         state.focusMode = data.focusMode || false; 
         state.darkMode = data.darkMode || false;
+        state.customSchedule = data.customSchedule || [];
         
         if (data.present && Array.isArray(data.present)) {
             state.present = data.present;
@@ -578,9 +585,7 @@
     try {
         localStorage.setItem(KEY, JSON.stringify(state));
     } catch (e) {
-        alert("儲存失敗！");
-        saveData();
-        syncUI();
+        console.error("Save error", e);
     }
   }
 
@@ -588,9 +593,15 @@
     $('modeSel').value = state.mode;
     $('totalInput').value = state.total;
     $('mathExtInput').value = state.mathExt;
-    $('mathExtField').style.display = (state.mode === 'mid_day2') ? 'flex' : 'none';
-    $('focusModeToggle').checked = state.focusMode; 
     
+    // Toggle Fields based on Mode
+    const isCustom = state.mode === 'custom';
+    $('mathExtField').style.display = (state.mode === 'mid_day2') ? 'flex' : 'none';
+    document.querySelectorAll('.custom-field').forEach(el => {
+        el.style.display = isCustom ? 'flex' : 'none';
+    });
+    
+    $('focusModeToggle').checked = state.focusMode; 
     if (state.darkMode) {
         document.body.classList.add('dark-mode');
         $('btnDarkMode').textContent = '☀️';
@@ -609,50 +620,85 @@
       drawClock();
   }
 
-  $('focusModeToggle').onchange = (e) => {
-      state.focusMode = e.target.checked;
-      saveData();
-      tick();
-  };
-
+  // Bind Event Listeners
   window.onload = function() {
       tryProcessLocalLogo();
       loadData();
+      
+      // Input Listeners
+      $('modeSel').addEventListener('change', (e) => { 
+          state.mode = e.target.value; 
+          saveData(); 
+          syncUI(); 
+          tick(); 
+      });
+      $('totalInput').addEventListener('change', (e) => { 
+          state.total = e.target.value; 
+          renderAttendance(); 
+          saveData(); 
+      });
+      $('mathExtInput').addEventListener('change', (e) => { 
+          state.mathExt = e.target.value; 
+          saveData(); 
+          tick(); 
+      });
+      $('focusModeToggle').addEventListener('change', (e) => {
+          state.focusMode = e.target.checked;
+          saveData();
+          tick();
+      });
+
       setInterval(tick, 1000);
       tick();
   };
 
+  // Start Custom Quiz Action
+  function startCustomQuiz() {
+      const subj = $('customSubj').value.trim() || '平常考';
+      const mins = parseInt($('customMins').value) || 15;
+      
+      const nowMs = Date.now();
+      const endMs = nowMs + (mins * 60 * 1000);
+      
+      const startD = new Date(nowMs);
+      const endD = new Date(endMs);
+
+      state.customSchedule = [{
+          name: subj,
+          start: formatHM(startD.getHours() * 60 + startD.getMinutes()),
+          end: formatHM(endD.getHours() * 60 + endD.getMinutes()),
+          exactStartMs: nowMs,
+          exactEndMs: endMs
+      }];
+      
+      state.mode = 'custom';
+      saveData();
+      syncUI();
+      tick();
+  }
+
   function tryProcessLocalLogo() {
       const img = $('schoolLogo');
       if (img.src.startsWith('data:')) return;
-
       const tempImg = new Image();
       tempImg.crossOrigin = "Anonymous";
       tempImg.onload = function() {
           try {
               const canvas = document.createElement('canvas');
-              canvas.width = tempImg.width;
-              canvas.height = tempImg.height;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(tempImg, 0, 0);
+              canvas.width = tempImg.width; canvas.height = tempImg.height;
+              const ctx = canvas.getContext('2d'); ctx.drawImage(tempImg, 0, 0);
               const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-              const data = imgData.data;
-              let hasWhite = false;
+              const data = imgData.data; let hasWhite = false;
               for (let i = 0; i < data.length; i += 4) {
-                  const r = data[i], g = data[i+1], b = data[i+2];
-                  if (r > 230 && g > 230 && b > 230) {
-                      data[i+3] = 0; 
-                      hasWhite = true;
+                  if (data[i] > 230 && data[i+1] > 230 && data[i+2] > 230) {
+                      data[i+3] = 0; hasWhite = true;
                   }
               }
               if (hasWhite) {
                   ctx.putImageData(imgData, 0, 0);
-                  img.src = canvas.toDataURL();
-                  img.style.mixBlendMode = 'normal';
+                  img.src = canvas.toDataURL(); img.style.mixBlendMode = 'normal';
               }
-          } catch (e) {
-              console.warn("無法自動去背 (可能是本地檔案安全性限制)，已啟用 CSS 混合模式作為後備方案。", e);
-          }
+          } catch (e) {}
       };
       tempImg.src = "logo.png";
   }
@@ -669,13 +715,9 @@
     grid.innerHTML = '';
     state.present.forEach((isP, idx) => {
       const div = document.createElement('div');
-      
       let className = `stu ${isP ? 'present' : 'absent'}`;
-      if (state.selectionIndex === idx) {
-          className += ' pending';
-      }
+      if (state.selectionIndex === idx) className += ' pending';
       div.className = className;
-      
       div.textContent = idx + 1;
       div.title = `座號 ${idx+1}`;
       
@@ -719,12 +761,16 @@
 
   function parseHM(hm) { const [h,m] = hm.split(':').map(Number); return h*60 + m; }
   function formatHM(min) { 
-    const h = Math.floor(min/60); 
-    const m = min%60; 
+    const h = Math.floor(min/60); const m = min%60; 
     return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; 
+  }
+  function getExactMin(ms) {
+      const d = new Date(ms);
+      return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
   }
 
   function getSchedule() {
+    if (state.mode === 'custom') return state.customSchedule || [];
     if (state.mode === 'low') {
       return [
         { name: '國語', start: '08:40', end: '09:20' },
@@ -738,7 +784,7 @@
         { name: '自然', start: '10:30', end: '11:10' }
       ];
     }
-    const ext = parseInt(state.mathExt);
+    const ext = parseInt(state.mathExt) || 0;
     return [
       { name: '數學', start: '08:40', end: formatHM(parseHM('09:20') + ext) },
       { name: '社會', start: '10:30', end: '11:10' }
@@ -762,59 +808,36 @@
     ctx.translate(radius, radius);
     const r = radius * 0.9;
 
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, 2 * Math.PI);
-    ctx.fillStyle = faceColor;
-    ctx.fill();
-    ctx.strokeStyle = borderColor; 
-    ctx.lineWidth = 4;
-    ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, 2 * Math.PI); ctx.fillStyle = faceColor; ctx.fill();
+    ctx.strokeStyle = borderColor; ctx.lineWidth = 4; ctx.stroke();
 
-    ctx.beginPath();
-    ctx.arc(0, 0, 3, 0, 2 * Math.PI);
-    ctx.fillStyle = markColor;
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, 3, 0, 2 * Math.PI); ctx.fillStyle = markColor; ctx.fill();
 
     for(let i=0; i<12; i++) {
         const ang = i * Math.PI / 6;
-        ctx.rotate(ang);
-        ctx.translate(0, -r * 0.85);
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(0, 5);
-        ctx.strokeStyle = markColor;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.translate(0, r * 0.85);
-        ctx.rotate(-ang);
+        ctx.rotate(ang); ctx.translate(0, -r * 0.85);
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 5);
+        ctx.strokeStyle = markColor; ctx.lineWidth = 2; ctx.stroke();
+        ctx.translate(0, r * 0.85); ctx.rotate(-ang);
     }
 
     const now = new Date();
-    let hour = now.getHours();
+    let hour = now.getHours() % 12;
     let minute = now.getMinutes();
     let second = now.getSeconds();
 
-    hour = hour % 12;
     hour = (hour*Math.PI/6) + (minute*Math.PI/(6*60)) + (second*Math.PI/(360*60));
     drawHand(ctx, hour, r*0.5, 4, handColor);
-
     minute = (minute*Math.PI/30) + (second*Math.PI/(30*60));
     drawHand(ctx, minute, r*0.75, 3, handColor);
-
     second = (second*Math.PI/30);
     drawHand(ctx, second, r*0.85, 1.5, '#ef4444');
   }
 
   function drawHand(ctx, pos, length, width, color) {
-    ctx.beginPath();
-    ctx.lineWidth = width;
-    ctx.lineCap = "round";
-    ctx.strokeStyle = color;
-    ctx.moveTo(0,0);
-    ctx.rotate(pos);
-    ctx.lineTo(0, -length);
-    ctx.stroke();
-    ctx.rotate(-pos);
+    ctx.beginPath(); ctx.lineWidth = width; ctx.lineCap = "round";
+    ctx.strokeStyle = color; ctx.moveTo(0,0); ctx.rotate(pos);
+    ctx.lineTo(0, -length); ctx.stroke(); ctx.rotate(-pos);
   }
 
   function tick() {
@@ -834,8 +857,8 @@
 
     for(let i=0; i<sched.length; i++) {
       const s = sched[i];
-      const start = parseHM(s.start);
-      const end = parseHM(s.end);
+      const start = s.exactStartMs ? getExactMin(s.exactStartMs) : parseHM(s.start);
+      const end = s.exactEndMs ? getExactMin(s.exactEndMs) : parseHM(s.end);
 
       if (nowMin < start) {
         if (!next) { 
@@ -851,20 +874,27 @@
     }
 
     if (!current && !next) {
-        const lastExam = sched[sched.length-1];
-        if (nowMin >= parseHM(lastExam.end)) {
-            phase = 'finish';
-        } else {
-            if (nowMin < parseHM(sched[0].start)) {
-                next = sched[0];
-                phase = 'before';
+        if (sched.length > 0) {
+            const lastExam = sched[sched.length-1];
+            const lastEnd = lastExam.exactEndMs ? getExactMin(lastExam.exactEndMs) : parseHM(lastExam.end);
+            if (nowMin >= lastEnd) {
+                phase = 'finish';
+            } else {
+                const firstStart = sched[0].exactStartMs ? getExactMin(sched[0].exactStartMs) : parseHM(sched[0].start);
+                if (nowMin < firstStart) {
+                    next = sched[0];
+                    phase = 'before';
+                }
             }
+        } else {
+            phase = 'finish'; // Empty schedule (e.g., custom not set yet)
         }
     }
     if (phase === 'break' || phase === 'before') {
         if (phase !== 'before') phase = 'break'; 
     }
 
+    // Focus Mode Logic
     const topSection = $('topSection');
     if (state.focusMode && phase === 'exam') {
         topSection.classList.add('focus-active');
@@ -872,35 +902,41 @@
         topSection.classList.remove('focus-active');
     }
 
-    updateUI(phase, current, next, nowMin);
+    updateUI(phase, current, next, now);
     renderSchedList(sched, current, next, phase);
   }
 
-  function updateUI(phase, current, next, nowMin) {
+  function updateUI(phase, current, next, now) {
     const timerBig = $('timerBig');
     const badge = $('statusBadge');
-    // const badge2 = $('statusBadge2'); // Hidden element
     const progress = $('progressBar');
     
     if (phase === 'exam') {
-      const endSec = parseHM(current.end) * 60;
-      const nowSec = nowMin * 60;
-      const remain = Math.max(0, endSec - nowSec);
+      let remainSec, totalSec;
+      if (current.exactEndMs) {
+          remainSec = Math.max(0, (current.exactEndMs - now.getTime()) / 1000);
+          totalSec = (current.exactEndMs - current.exactStartMs) / 1000;
+      } else {
+          const endSecM = parseHM(current.end) * 60;
+          const startSecM = parseHM(current.start) * 60;
+          const nowSecM = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+          remainSec = Math.max(0, endSecM - nowSecM);
+          totalSec = endSecM - startSecM;
+      }
       
-      timerBig.textContent = formatSec(remain);
+      timerBig.textContent = formatSec(remainSec);
       $('currentSubDisplay').textContent = current.name;
       $('currentTimeRange').textContent = `${current.start} ~ ${current.end}`;
-      $('quickCountdown').textContent = formatSec(remain);
+      $('quickCountdown').textContent = formatSec(remainSec);
       
-      badge.textContent = "考試中";
+      badge.textContent = "測驗中";
       badge.className = "timer-status status-exam";
       $('timerLabel').textContent = "本節剩餘時間";
 
-      const totalSec = (parseHM(current.end) - parseHM(current.start)) * 60;
-      const per = (remain / totalSec) * 100;
+      const per = (remainSec / totalSec) * 100;
       progress.style.width = per + '%';
       
-      if (remain < 300) {
+      if (remainSec < 300) {
         timerBig.classList.add('urgent');
         progress.style.background = 'var(--red)';
       } else {
@@ -910,15 +946,20 @@
 
     } else if (phase === 'break' || phase === 'before') {
       const target = next;
-      const startSec = parseHM(target.start) * 60;
-      const nowSec = nowMin * 60;
-      const remain = Math.max(0, startSec - nowSec);
+      let remainSec;
+      if (target.exactStartMs) {
+          remainSec = Math.max(0, (target.exactStartMs - now.getTime()) / 1000);
+      } else {
+          const startSecM = parseHM(target.start) * 60;
+          const nowSecM = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+          remainSec = Math.max(0, startSecM - nowSecM);
+      }
 
-      timerBig.textContent = formatSec(remain);
+      timerBig.textContent = formatSec(remainSec);
       timerBig.classList.remove('urgent');
       $('currentSubDisplay').textContent = "下科：" + target.name;
       $('currentTimeRange').textContent = `即將於 ${target.start} 開始`;
-      $('quickCountdown').textContent = formatSec(remain);
+      $('quickCountdown').textContent = formatSec(remainSec);
 
       badge.textContent = (phase === 'break') ? "休息時間" : "準備中";
       badge.className = "timer-status status-break";
@@ -930,12 +971,23 @@
     } else {
       timerBig.textContent = "00:00";
       timerBig.classList.remove('urgent');
-      $('currentSubDisplay').textContent = "考試結束";
-      $('currentTimeRange').textContent = "本日行程已結束";
+      
+      // Handle Custom Empty State
+      const sched = getSchedule();
+      if (state.mode === 'custom' && sched.length === 0) {
+          $('currentSubDisplay').textContent = "自訂平常考";
+          $('currentTimeRange').textContent = "請設定上方的「測驗時間」並點擊開始";
+          badge.textContent = "待命設定";
+          $('timerLabel').textContent = "等待設定";
+      } else {
+          $('currentSubDisplay').textContent = "測驗結束";
+          $('currentTimeRange').textContent = "本日行程已結束";
+          badge.textContent = "完成";
+          $('timerLabel').textContent = "計時結束";
+      }
+      
       $('quickCountdown').textContent = "--";
-      badge.textContent = "完成";
       badge.className = "timer-status status-finish";
-      $('timerLabel').textContent = "計時結束";
       progress.style.width = '0%';
     }
   }
@@ -949,6 +1001,12 @@
   function renderSchedList(sched, current, next, phase) {
     const list = $('schedList');
     list.innerHTML = '';
+    
+    if (state.mode === 'custom' && sched.length === 0) {
+        list.innerHTML = '<div style="padding:20px; color:var(--muted); text-align:center;">目前沒有自訂行程，請從上方新增。</div>';
+        return;
+    }
+    
     sched.forEach(s => {
       const div = document.createElement('div');
       
@@ -960,11 +1018,15 @@
       }
       
       const now = new Date();
-      const nowMin = now.getHours()*60 + now.getMinutes();
-      const endMin = parseHM(s.end);
-      if (nowMin >= endMin) {
-          itemClass += ' past';
+      let isPast = false;
+      if (s.exactEndMs) {
+          isPast = now.getTime() >= s.exactEndMs;
+      } else {
+          const nowMin = now.getHours()*60 + now.getMinutes();
+          const endMin = parseHM(s.end);
+          isPast = nowMin >= endMin;
       }
+      if (isPast) itemClass += ' past';
 
       div.className = itemClass;
       div.innerHTML = `
@@ -979,25 +1041,15 @@
   $('btnFullscreen').onclick = () => {
     if (!document.fullscreenElement) {
         const docEl = document.documentElement;
-        if (docEl.requestFullscreen) {
-            docEl.requestFullscreen();
-        } else if (docEl.mozRequestFullScreen) { /* Firefox */
-            docEl.mozRequestFullScreen();
-        } else if (docEl.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
-            docEl.webkitRequestFullscreen();
-        } else if (docEl.msRequestFullscreen) { /* IE/Edge */
-            docEl.msRequestFullscreen();
-        }
+        if (docEl.requestFullscreen) docEl.requestFullscreen();
+        else if (docEl.mozRequestFullScreen) docEl.mozRequestFullScreen();
+        else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+        else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
     } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.mozCancelFullScreen) {
-            document.mozCancelFullScreen();
-        } else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-            document.msExitFullscreen();
-        }
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
     }
   };
 </script>
